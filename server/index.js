@@ -1,12 +1,24 @@
 const express = require("express");
 const uuid = require("uuid");
 const path = require("path");
-const { team, styles, roles, month_events } = require("./fake-db");
+const {
+  populateTeam,
+  TeamMember,
+  styles,
+  all_roles,
+  weekly_events,
+  Single_event,
+  Weekly_event,
+  create_month_events,
+} = require("./fake-db");
+
 const PORT = process.env.PORT || 8080;
 const app = express();
 
+app.use(express.json());
+
 const cors = require("cors");
-// const { da } = require("date-fns/locale");
+
 app.use(cors());
 
 // const bodyParser = require("body-parser");
@@ -15,23 +27,20 @@ app.use(cors());
 
 // console.log(month_events);
 
-app.use(express.json());
+const month_events = {
+  7: create_month_events(2023, 7, weekly_events),
+  8: create_month_events(2023, 8, weekly_events),
+};
 
-// app.get("/api", (req, res) => {
-//   res.json({ message: "Hello from server!" });
-// });
+let team = new Map(
+  populateTeam().map((teamMember) => [teamMember.id, teamMember])
+);
 
 app.get("/events/:month", (req, res) => {
   const month = req.params.month;
   console.log(month);
   res.json(month_events[month]);
 });
-
-// app.get("/events/:month/:day", (req, res) => {
-//   res.send(
-//     `GET HTTP method on events from month ${req.params.month} from day ${req.params.day} resource`
-//   );
-// });
 
 app.get("/team/:teamMemberId", (req, res) => {
   console.log(`Team member with id: ${req.params.teamMemberId}`);
@@ -40,18 +49,12 @@ app.get("/team/:teamMemberId", (req, res) => {
     (team_member) => team_member.id === req.params.teamMemberId
   );
 
-  // console.log(
-  //   `${team_member.id} === ${req.params.teamMemberId} which means its ${
-  //     team_member.id === req.params.teamMemberId
-  //   }`
-  // );
-
   console.log(teamMemberToSend);
 
   if (!teamMemberToSend) {
     res.status(404).send("Team member not found");
   } else {
-    teamMemberToSend.roles = roles.filter((role) =>
+    teamMemberToSend.roles = all_roles.filter((role) =>
       role.team_members.includes(teamMemberToSend.id)
     );
     console.log(
@@ -61,55 +64,52 @@ app.get("/team/:teamMemberId", (req, res) => {
   }
 });
 
-app.get("/team/:teamMemberId/roles", (req, res) => {
-  console.log(`Team member with id: ${req.params.teamMemberId}`);
-
-  const teamMemberToSend = team.find(
-    (team_member) => team_member.id === req.params.teamMemberId
-  );
-
-  console.log(teamMemberToSend);
-
-  if (!teamMemberToSend) {
-    res.status(404).send("Team member not found");
-  } else {
-    const memberRoles = roles
-      .filter((role) => role.team_members.includes(teamMemberToSend.id))
-      .map((role) => role.role_type);
-    console.log(
-      `team member: ${teamMemberToSend.first_name} roles are: ${memberRoles}`
-    );
-    res.status(200).json(memberRoles);
+class TeamMemberRole {
+  constructor(type, style) {
+    this.type = type;
+    this.style = style;
   }
-});
+}
 
 app.get("/team", (req, res) => {
   console.log("Request to fetch team has been recieved");
-  res.json(team);
+  console.log(team);
+  res.status(200).json(Array.from(team.values()));
 });
+
 app.get("/team/:category", (req, res) => {
   res.send(`Team Members from category: ${req.params.category}`);
 });
 
 app.get("/roles", (req, res) => {
-  res.json(roles);
+  res.json(all_roles);
 });
 
 app.post("/", (req, res) => {
   res.send("Received a POST HTTP method");
 });
 
+app.put("/team/:id", (req, res) => {
+  const id = req.params.id;
+  console.log(`Team member with id: ${id} is going to be updated`);
+
+  const teamMember = team.get(id);
+
+  if (!teamMember) {
+    res.status(404).send("Team member not found");
+  } else {
+    const updatedTeamMember = TeamMember.fromJSON(req.body);
+    team.set(id, updatedTeamMember);
+    console.log(updatedTeamMember);
+    res.status(200).send(updatedTeamMember);
+  }
+});
+
 app.post("/team", (req, res) => {
   const id = uuid.v4();
-  const teamMember = new TeamMember(
-    req.body.first_name,
-    req.body.last_name,
-    req.body.email,
-    req.body.phone
-  );
-
-  team.push(teamMember);
-
+  const teamMember = TeamMember.fromJSON({ ...req.body, id: id });
+  console.log(teamMember);
+  team.set(id, teamMember);
   res.send(teamMember);
 });
 

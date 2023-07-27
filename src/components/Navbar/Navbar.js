@@ -203,7 +203,7 @@ function Navbar() {
 
         {/* <!-- Right elements --> */}
         <div className="relative flex items-center">
-          <Notifications />
+          {/* <Notifications /> */}
           <Profile />
         </div>
       </div>

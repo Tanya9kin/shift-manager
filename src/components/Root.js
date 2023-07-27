@@ -1,9 +1,10 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Calendar from "./Calendar/Calendar";
-import Team from "./Team/Team";
 
 import App from "./App";
+import Calendar from "./Calendar/Calendar";
+import TeamContextProvider from "./Team/TeamContextProvider";
+import Team from "./Team/Team.js";
 
 const router = createBrowserRouter([
   {
@@ -16,7 +17,11 @@ const router = createBrowserRouter([
       },
       {
         path: "Team",
-        element: <Team />,
+        element: (
+          <TeamContextProvider>
+            <Team />
+          </TeamContextProvider>
+        ),
       },
     ],
   },
