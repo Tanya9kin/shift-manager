@@ -6,7 +6,8 @@ import { useTeamContext } from "./TeamContextProvider";
 import { TeamMember } from "../../../public/utils";
 
 function TeamMemberEditFormContainer({ data, roleFields }) {
-  const { setTeamMembers, setChosenTeamMember } = useTeamContext();
+  const { setTeamMembers, setChosenTeamMember, setModalOpen } =
+    useTeamContext();
   const [isLoading, setIsLoading] = useState(false);
 
   const textFields = [
@@ -64,6 +65,7 @@ function TeamMemberEditFormContainer({ data, roleFields }) {
           new Map(prevTeamMembers.set(json.id, TeamMember.fromJSON(json)))
       );
       setChosenTeamMember(TeamMember.fromJSON(json));
+      setModalOpen(false);
     } catch (error) {
       console.error(error);
     } finally {

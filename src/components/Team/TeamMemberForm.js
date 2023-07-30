@@ -1,12 +1,12 @@
 import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFormState } from "react-hook-form";
 import { DevTool } from "@hookform/devtools";
 import { initTE, Input, Ripple } from "tw-elements";
 
 function LoadingSpinner() {
   return (
     <div
-      className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
+      className="inline-block h-4 w-4 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
       role="status"
     >
       <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
@@ -14,6 +14,30 @@ function LoadingSpinner() {
       </span>
     </div>
   );
+}
+
+function DirtyListener({ control }) {
+  const { isDirty } = useFormState({ control });
+
+  function alertUser() {
+    alert("You have unsaved changes. Are you sure you want to cancel?");
+  }
+
+  useEffect(() => {
+    if (isDirty) {
+      document.getElementById("cancel").addEventListener("click", alertUser);
+    }
+
+    return () => {
+      if (document.getElementById("cancel")) {
+        document
+          .getElementById("cancel")
+          .removeEventListener("click", alertUser);
+      }
+    };
+  }, [isDirty]);
+
+  return null;
 }
 
 function TeamMemberForm({
@@ -30,6 +54,8 @@ function TeamMemberForm({
   const form = useForm({ defaultValues: defaultData });
   const { register, control, handleSubmit, formState } = form;
   const { errors } = formState;
+
+  // This is a workaround for the fact that react-hook-form dirtyFields re-renders on each time its value changes
 
   function TextInput({ name, rules, label }) {
     useEffect(() => {
@@ -103,21 +129,19 @@ function TeamMemberForm({
         >
           {isLoading ? <LoadingSpinner /> : "Save"}
         </button>
-        {/* <button
-          type="cancel"
-          className="inline-block rounded bg-primary-100 px-6 pb-2 pt-2.5 text-xs font-medium uppercase leading-normal text-primary-700 transition duration-150 ease-in-out hover:bg-primary-accent-100 focus:bg-primary-accent-100 focus:outline-none focus:ring-0 active:bg-primary-accent-200"
+        <DirtyListener control={control} />
+        <button
+          type="button"
+          id="cancel"
+          className="inline-block rounded bg-primary-100 ml-2 px-6 pb-2 pt-2.5 text-xs font-medium uppercase leading-normal text-primary-700 transition duration-150 ease-in-out hover:bg-primary-accent-100 focus:bg-primary-accent-100 focus:outline-none focus:ring-0 active:bg-primary-accent-200"
           data-te-ripple-init
           data-te-ripple-color="light"
           disabled={isLoading}
-          onClick={(e) =>
-            dirtyFields
-              ? alert("Are you sure you want to dismiss the changes?")
-              : ""
-          }
         >
           Cancel
-        </button> */}
+        </button>
       </form>
+
       <DevTool control={control} />
     </div>
   );
